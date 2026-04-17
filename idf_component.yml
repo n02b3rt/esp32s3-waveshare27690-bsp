@@ -1,0 +1,22 @@
+version: "0.1.0"
+description: "Board Support Package for Waveshare ESP32-S3-Touch-LCD-2.8 (27690) - ST7789T3 + CST328 + LVGL"
+url: "https://github.com/n02b3rt/esp32s3-waveshare27690-bsp"
+license: "Apache-2.0"
+tags:
+  - bsp
+  - waveshare
+  - esp32-s3
+  - st7789
+  - cst328
+  - lvgl
+
+targets:
+  - esp32s3
+
+dependencies:
+  idf: ">=5.3"
+  # NOTE: esp_lcd_st7789 is built into ESP-IDF core (components/esp_lcd),
+  # NOT a managed component. Don't list it here.
+  waveshare/esp_lcd_touch_cst328: "^1.0"
+  espressif/esp_lvgl_port: "^2.7"
+  lvgl/lvgl: "~9.2"

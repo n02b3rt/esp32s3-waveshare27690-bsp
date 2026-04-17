@@ -1,0 +1,20 @@
+idf_component_register(
+    SRCS
+        "src/bsp.c"
+        "src/bsp_display.c"
+        "src/bsp_touch.c"
+        "src/bsp_lvgl.c"
+    INCLUDE_DIRS
+        "include"
+    PRIV_INCLUDE_DIRS
+        "priv_include"
+    REQUIRES
+        driver
+        esp_lcd
+        esp_driver_gpio
+        esp_driver_spi
+        esp_driver_i2c
+        lvgl__lvgl
+    PRIV_REQUIRES
+        esp_timer
+)

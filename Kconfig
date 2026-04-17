@@ -1,0 +1,93 @@
+menu "Waveshare 27690 BSP"
+
+    comment "Pin assignments verified against Waveshare ESP32-S3-Touch-LCD-2.8 (SKU 27690) schematic."
+
+    menu "LCD (ST7789T3, SPI)"
+        config BSP_LCD_SPI_HOST
+            int "SPI host (SPI2_HOST=1, SPI3_HOST=2)"
+            default 1
+            range 1 2
+
+        config BSP_LCD_PIN_MOSI
+            int "GPIO: LCD MOSI"
+            default 45
+
+        config BSP_LCD_PIN_SCLK
+            int "GPIO: LCD SCLK"
+            default 40
+
+        config BSP_LCD_PIN_CS
+            int "GPIO: LCD CS"
+            default 42
+
+        config BSP_LCD_PIN_DC
+            int "GPIO: LCD DC"
+            default 41
+
+        config BSP_LCD_PIN_RST
+            int "GPIO: LCD RST"
+            default 39
+
+        config BSP_LCD_PIN_BL
+            int "GPIO: LCD Backlight"
+            default 5
+
+        config BSP_LCD_BL_ACTIVE_HIGH
+            bool "Backlight active high"
+            default y
+
+        config BSP_LCD_SPI_HZ
+            int "SPI clock [Hz]"
+            default 80000000
+    endmenu
+
+    menu "Touch (CST328, I2C)"
+        config BSP_TOUCH_I2C_PORT
+            int "I2C port number"
+            default 0
+
+        config BSP_TOUCH_PIN_SDA
+            int "GPIO: Touch SDA"
+            default 1
+
+        config BSP_TOUCH_PIN_SCL
+            int "GPIO: Touch SCL"
+            default 3
+
+        config BSP_TOUCH_PIN_RST
+            int "GPIO: Touch RST (-1 if none)"
+            default 2
+
+        config BSP_TOUCH_PIN_INT
+            int "GPIO: Touch INT (-1 if none)"
+            default 4
+
+        config BSP_TOUCH_I2C_HZ
+            int "I2C clock [Hz]"
+            default 400000
+    endmenu
+
+    menu "LVGL buffers"
+        config BSP_LVGL_BUFFER_LINES
+            int "LVGL draw buffer height (lines)"
+            default 40
+            help
+              Draw buffer size in pixels = width * this value.
+              At 240x320 and 40 lines = 19200 px (~38 KB per buffer x2).
+              Allocated from PSRAM via esp_lvgl_port.
+
+        config BSP_LVGL_TASK_PRIORITY
+            int "LVGL task priority"
+            default 2
+
+        config BSP_LVGL_TASK_STACK
+            int "LVGL task stack size (bytes)"
+            default 6144
+
+        config BSP_LVGL_TASK_CORE
+            int "LVGL task core (0/1/-1=any)"
+            default 0
+            range -1 1
+    endmenu
+
+endmenu
