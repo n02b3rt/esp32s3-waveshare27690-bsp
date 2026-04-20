@@ -11,6 +11,7 @@
 
 #include "bsp/bsp.h"
 #include "lvgl.h"
+#include "kni_logo.h"
 
 static const char *TAG = "kni";
 
@@ -25,12 +26,6 @@ static const char *TAG = "kni";
 #define C_BAR       0x0B1825
 #define C_BORDER    0x1D3148
 #define C_INACTIVE  0x3D5A78
-
-/* ── Logo point arrays — file scope so LVGL lines keep valid pointers ─────── */
-static lv_point_precise_t s_chev[3];   /* left chevron  < */
-static lv_point_precise_t s_lbar[2];   /* left  | of N     */
-static lv_point_precise_t s_diag[2];   /* diagonal  /  of N */
-static lv_point_precise_t s_rbar[2];   /* right | of N     */
 
 /* ── Screens & widgets ────────────────────────────────────────────────────── */
 static lv_obj_t *s_splash    = NULL;
@@ -59,6 +54,7 @@ static void style_card(lv_obj_t *o)
     lv_obj_set_style_radius(o,       8,                      0);
     lv_obj_set_style_pad_all(o,      10,                     0);
     lv_obj_clear_flag(o, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(o, LV_OBJ_FLAG_CLICKABLE);  /* let touch reach scrollable parent */
 }
 
 static lv_obj_t *mk_label(lv_obj_t *parent, const char *txt,
@@ -69,55 +65,6 @@ static lv_obj_t *mk_label(lv_obj_t *parent, const char *txt,
     lv_obj_set_style_text_color(l, lv_color_hex(col), 0);
     if (font) lv_obj_set_style_text_font(l, font, 0);
     return l;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════ */
-/*  KNI LOGO — drawn with lv_line objects                                     */
-/*  Geometry mirrors the real logo: left chevron < + right N shape            */
-/* ══════════════════════════════════════════════════════════════════════════ */
-
-static void draw_logo(lv_obj_t *parent, int cx, int cy, int s)
-{
-    lv_color_t teal = lv_color_hex(C_TEAL);
-    int lw = (s >= 8) ? 5 : 3;
-
-    /* ── Left chevron "< " ──────────────────────────────────────────────── */
-    s_chev[0] = (lv_point_precise_t){ cx - 2*s, cy - 3*s };
-    s_chev[1] = (lv_point_precise_t){ cx - 5*s, cy       };
-    s_chev[2] = (lv_point_precise_t){ cx - 2*s, cy + 3*s };
-
-    lv_obj_t *chev = lv_line_create(parent);
-    lv_line_set_points(chev, s_chev, 3);
-    lv_obj_set_style_line_color(chev, teal, 0);
-    lv_obj_set_style_line_width(chev, lw,   0);
-    lv_obj_set_style_line_rounded(chev, true, 0);
-
-    /* ── Right "N" shape: left bar, diagonal, right bar ─────────────────── */
-    s_lbar[0] = (lv_point_precise_t){ cx + 1*s, cy - 3*s };
-    s_lbar[1] = (lv_point_precise_t){ cx + 1*s, cy + 3*s };
-
-    lv_obj_t *lb = lv_line_create(parent);
-    lv_line_set_points(lb, s_lbar, 2);
-    lv_obj_set_style_line_color(lb, teal, 0);
-    lv_obj_set_style_line_width(lb, lw,   0);
-    lv_obj_set_style_line_rounded(lb, true, 0);
-
-    s_diag[0] = (lv_point_precise_t){ cx + 1*s, cy - 3*s };
-    s_diag[1] = (lv_point_precise_t){ cx + 5*s, cy + 3*s };
-
-    lv_obj_t *dg = lv_line_create(parent);
-    lv_line_set_points(dg, s_diag, 2);
-    lv_obj_set_style_line_color(dg, teal, 0);
-    lv_obj_set_style_line_width(dg, lw,   0);
-
-    s_rbar[0] = (lv_point_precise_t){ cx + 5*s, cy - 3*s };
-    s_rbar[1] = (lv_point_precise_t){ cx + 5*s, cy + 3*s };
-
-    lv_obj_t *rb = lv_line_create(parent);
-    lv_line_set_points(rb, s_rbar, 2);
-    lv_obj_set_style_line_color(rb, teal, 0);
-    lv_obj_set_style_line_width(rb, lw,   0);
-    lv_obj_set_style_line_rounded(rb, true, 0);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════ */
@@ -172,7 +119,7 @@ static void sys_timer_cb(lv_timer_t *t)
 /*  PANEL 0 — HOME                                                             */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-static void build_home_panel(lv_obj_t *scr)
+static lv_obj_t *make_panel(lv_obj_t *scr)
 {
     lv_obj_t *p = lv_obj_create(scr);
     lv_obj_set_size(p, 240, 234);
@@ -181,44 +128,59 @@ static void build_home_panel(lv_obj_t *scr)
     lv_obj_set_style_bg_opa(p,      LV_OPA_COVER,       0);
     lv_obj_set_style_border_width(p, 0, 0);
     lv_obj_set_style_radius(p,       0, 0);
-    lv_obj_set_style_pad_all(p,     12, 0);
+    lv_obj_set_style_pad_all(p,     10, 0);
+    /* no layout — flex on panel blocks scroll for initially-hidden objects */
     lv_obj_set_scroll_dir(p, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(p, LV_SCROLLBAR_MODE_ACTIVE);
+    return p;
+}
+
+static lv_obj_t *make_card(lv_obj_t *parent, const char *title)
+{
+    lv_obj_t *c = lv_obj_create(parent);
+    lv_obj_set_width(c, lv_pct(100));
+    lv_obj_set_height(c, LV_SIZE_CONTENT);
+    style_card(c);
+    lv_obj_set_layout(c, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(c, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_row(c, 5, 0);
+    mk_label(c, title, C_TEAL, NULL);
+    return c;
+}
+
+static void build_home_panel(lv_obj_t *scr)
+{
+    lv_obj_t *p = make_panel(scr);
     s_panels[0] = p;
 
+    /* Flex column wrapper — no scroll, LV_SIZE_CONTENT, stacks cards */
+    lv_obj_t *col = lv_obj_create(p);
+    lv_obj_set_width(col,  lv_pct(100));
+    lv_obj_set_height(col, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(col,      LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(col, 0,            0);
+    lv_obj_set_style_pad_all(col,      0,            0);
+    lv_obj_set_style_pad_row(col,      8,            0);
+    lv_obj_set_layout(col, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(col, LV_FLEX_FLOW_COLUMN);
+    lv_obj_clear_flag(col, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(col, LV_OBJ_FLAG_CLICKABLE);
+
     /* Welcome card */
-    lv_obj_t *c1 = lv_obj_create(p);
-    lv_obj_set_size(c1, 216, 86);
-    lv_obj_set_pos(c1, 0, 0);
-    style_card(c1);
-
-    lv_obj_t *wt = mk_label(c1, "KNI ESP32-S3", C_TEAL, &lv_font_montserrat_14);
-    lv_obj_set_pos(wt, 0, 0);
-
+    lv_obj_t *c1 = make_card(col, "KNI ESP32-S3");
     lv_obj_t *ws = mk_label(c1,
         "Waveshare 27690 BSP v0.1\n"
-        "ST7789  240\xc3\x97" "320  | LVGL 9.2\n"
+        "ST7789 240x320 | LVGL 9.2\n"
         "CST328 capacitive touch",
         C_SUBTEXT, NULL);
-    lv_obj_set_pos(ws, 0, 20);
     lv_label_set_long_mode(ws, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(ws, 196);
+    lv_obj_set_width(ws, lv_pct(100));
 
     /* System status card */
-    lv_obj_t *c2 = lv_obj_create(p);
-    lv_obj_set_size(c2, 216, 88);
-    lv_obj_set_pos(c2, 0, 94);
-    style_card(c2);
-
-    mk_label(c2, "SYSTEM STATUS", C_TEAL, NULL);
-
+    lv_obj_t *c2 = make_card(col, "SYSTEM STATUS");
     s_uptime_lbl = mk_label(c2, "Uptime     00:00:00", C_TEXT, NULL);
-    lv_obj_set_pos(s_uptime_lbl, 0, 22);
-
-    s_heap_lbl = mk_label(c2, "Free heap  --- KB", C_TEXT, NULL);
-    lv_obj_set_pos(s_heap_lbl, 0, 44);
-
-    lv_obj_t *cpu = mk_label(c2, "CPU        240 MHz", C_SUBTEXT, NULL);
-    lv_obj_set_pos(cpu, 0, 66);
+    s_heap_lbl   = mk_label(c2, "Free heap  --- KB",   C_TEXT, NULL);
+    mk_label(c2, "CPU        240 MHz", C_SUBTEXT, NULL);
 
     /* Start live update */
     s_sys_timer = lv_timer_create(sys_timer_cb, 1000, NULL);
@@ -231,27 +193,15 @@ static void build_home_panel(lv_obj_t *scr)
 
 static void build_info_panel(lv_obj_t *scr)
 {
-    lv_obj_t *p = lv_obj_create(scr);
-    lv_obj_set_size(p, 240, 234);
-    lv_obj_set_pos(p, 0, 28);
-    lv_obj_set_style_bg_color(p,    lv_color_hex(C_BG), 0);
-    lv_obj_set_style_bg_opa(p,      LV_OPA_COVER,       0);
-    lv_obj_set_style_border_width(p, 0, 0);
-    lv_obj_set_style_radius(p,       0, 0);
-    lv_obj_set_style_pad_all(p,     12, 0);
-    lv_obj_set_scroll_dir(p, LV_DIR_VER);
+    lv_obj_t *p = make_panel(scr);
     lv_obj_add_flag(p, LV_OBJ_FLAG_HIDDEN);
     s_panels[1] = p;
 
-    lv_obj_t *card = lv_obj_create(p);
-    lv_obj_set_size(card, 216, 195);
-    lv_obj_set_pos(card, 0, 0);
-    style_card(card);
-
-    mk_label(card, "O PROJEKCIE", C_TEAL, NULL);
+    lv_obj_t *card = make_card(p, "O PROJEKCIE");
+    lv_obj_set_width(card, lv_pct(100));
 
     lv_obj_t *d = mk_label(card,
-        "Ko\xc5\x82\x6f Naukowe Informatyk\xc3\xb3\x77\n"
+        "Kolo Naukowe Informatykow\n"
         "Uniwersytetu Rzeszowskiego\n\n"
         "Projekt BSP dla ESP32-S3\n"
         "z ekranem Waveshare 27690.\n\n"
@@ -260,10 +210,9 @@ static void build_info_panel(lv_obj_t *scr)
         "PSRAM 8 MB | Flash 16 MB\n\n"
         "Wersja BSP: v0.1.0",
         C_TEXT, NULL);
-    lv_obj_set_pos(d, 0, 22);
     lv_label_set_long_mode(d, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(d, 196);
-    lv_obj_set_style_text_line_space(d, 1, 0);
+    lv_obj_set_width(d, lv_pct(100));
+    lv_obj_set_style_text_line_space(d, 2, 0);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════ */
@@ -272,53 +221,45 @@ static void build_info_panel(lv_obj_t *scr)
 
 static void build_sys_panel(lv_obj_t *scr)
 {
-    lv_obj_t *p = lv_obj_create(scr);
-    lv_obj_set_size(p, 240, 234);
-    lv_obj_set_pos(p, 0, 28);
-    lv_obj_set_style_bg_color(p,    lv_color_hex(C_BG), 0);
-    lv_obj_set_style_bg_opa(p,      LV_OPA_COVER,       0);
-    lv_obj_set_style_border_width(p, 0, 0);
-    lv_obj_set_style_radius(p,       0, 0);
-    lv_obj_set_style_pad_all(p,     12, 0);
-    lv_obj_set_scroll_dir(p, LV_DIR_VER);
+    lv_obj_t *p = make_panel(scr);
     lv_obj_add_flag(p, LV_OBJ_FLAG_HIDDEN);
     s_panels[2] = p;
 
     static const struct { const char *k; const char *v; } specs[] = {
-        { "SoC",     "ESP32-S3R8"     },
-        { "CPU",     "Xtensa LX7 x2" },
-        { "Takt",    "240 MHz"        },
-        { "Flash",   "16 MB QIO"      },
-        { "PSRAM",   "8 MB Octal"     },
-        { "LCD",     "ST7789T3 SPI"   },
-        { "Rozdzielczosc", "240x320"  },
-        { "Dotyk",   "CST328 I2C"     },
-        { "LVGL",    "9.2"            },
-        { "IDF",     ">= 5.3"         },
+        { "SoC",          "ESP32-S3R8"     },
+        { "CPU",          "Xtensa LX7 x2"  },
+        { "Takt",         "240 MHz"         },
+        { "Flash",        "16 MB QIO"       },
+        { "PSRAM",        "8 MB Octal"      },
+        { "LCD",          "ST7789T3 SPI"    },
+        { "Rozdzielcz.",  "240x320"         },
+        { "Dotyk",        "CST328 I2C"      },
+        { "LVGL",         "9.2"             },
+        { "IDF",          ">= 5.3"          },
     };
     int n = (int)(sizeof(specs) / sizeof(specs[0]));
 
-    lv_obj_t *card = lv_obj_create(p);
-    lv_obj_set_size(card, 216, 20 + n * 18);
-    lv_obj_set_pos(card, 0, 0);
-    style_card(card);
-
-    mk_label(card, "HARDWARE", C_TEAL, NULL);
+    lv_obj_t *card = make_card(p, "HARDWARE");
+    lv_obj_set_width(card, lv_pct(100));
 
     for (int i = 0; i < n; i++) {
         lv_obj_t *row = lv_obj_create(card);
-        lv_obj_set_size(row, 196, 16);
-        lv_obj_set_pos(row, 0, 18 + i * 18);
+        lv_obj_set_width(row,  lv_pct(100));
+        lv_obj_set_height(row, LV_SIZE_CONTENT);
         lv_obj_set_style_bg_opa(row,      LV_OPA_TRANSP, 0);
         lv_obj_set_style_border_width(row, 0,            0);
-        lv_obj_set_style_pad_all(row,      0,            0);
+        lv_obj_set_style_pad_all(row,      2,            0);
+        lv_obj_set_layout(row, LV_LAYOUT_FLEX);
+        lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
+        lv_obj_set_flex_align(row,
+            LV_FLEX_ALIGN_SPACE_BETWEEN,
+            LV_FLEX_ALIGN_CENTER,
+            LV_FLEX_ALIGN_CENTER);
         lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_clear_flag(row, LV_OBJ_FLAG_CLICKABLE);
 
-        lv_obj_t *k = mk_label(row, specs[i].k, C_SUBTEXT, NULL);
-        lv_obj_set_align(k, LV_ALIGN_LEFT_MID);
-
-        lv_obj_t *v = mk_label(row, specs[i].v, C_TEXT, NULL);
-        lv_obj_set_align(v, LV_ALIGN_RIGHT_MID);
+        mk_label(row, specs[i].k, C_SUBTEXT, NULL);
+        mk_label(row, specs[i].v, C_TEXT,    NULL);
     }
 }
 
@@ -434,43 +375,40 @@ static void build_splash_screen(void)
     lv_obj_set_style_bg_opa(top_line,      LV_OPA_COVER,         0);
     lv_obj_set_style_border_width(top_line, 0,                   0);
 
-    /* ── KNI logo centered at (120, 108) scale=10 ─────────────────────── */
-    /* Spans x: 70-170, y: 78-138  — 100×60 px footprint                  */
-    draw_logo(s_splash, 120, 108, 10);
-
-    /* ── Binary "01101" between the two logo shapes ───────────────────── */
-    lv_obj_t *bin = mk_label(s_splash, "01101", C_TEAL_DIM, NULL);
-    lv_obj_align(bin, LV_ALIGN_TOP_MID, 8, 101); /* vertically centred in logo */
+    /* ── KNI logo image 160×160, centered horizontally ─────────────────── */
+    lv_obj_t *logo_img = lv_image_create(s_splash);
+    lv_image_set_src(logo_img, &kni_logo);
+    lv_obj_align(logo_img, LV_ALIGN_TOP_MID, 0, 8);
 
     /* ── "KNI" large teal label ────────────────────────────────────────── */
     lv_obj_t *kni = mk_label(s_splash, "KNI", C_TEAL, &lv_font_montserrat_24);
-    lv_obj_align(kni, LV_ALIGN_TOP_MID, 0, 152);
+    lv_obj_align(kni, LV_ALIGN_TOP_MID, 0, 176);
 
     /* ── Org names ─────────────────────────────────────────────────────── */
     lv_obj_t *o1 = mk_label(s_splash,
-        "Ko\xc5\x82\x6f Naukowe Informatyk\xc3\xb3\x77", C_TEXT, NULL);
-    lv_obj_align(o1, LV_ALIGN_TOP_MID, 0, 188);
+        "Kolo Naukowe Informatykow", C_TEXT, NULL);
+    lv_obj_align(o1, LV_ALIGN_TOP_MID, 0, 210);
 
     lv_obj_t *o2 = mk_label(s_splash,
         "Uniwersytetu Rzeszowskiego", C_SUBTEXT, NULL);
-    lv_obj_align(o2, LV_ALIGN_TOP_MID, 0, 208);
+    lv_obj_align(o2, LV_ALIGN_TOP_MID, 0, 228);
 
     /* ── Thin separator ────────────────────────────────────────────────── */
     lv_obj_t *sep = lv_obj_create(s_splash);
     lv_obj_set_size(sep, 140, 1);
-    lv_obj_align(sep, LV_ALIGN_TOP_MID, 0, 234);
+    lv_obj_align(sep, LV_ALIGN_TOP_MID, 0, 252);
     lv_obj_set_style_bg_color(sep,    lv_color_hex(C_BORDER), 0);
     lv_obj_set_style_bg_opa(sep,      LV_OPA_COVER,           0);
     lv_obj_set_style_border_width(sep, 0,                     0);
 
     /* ── "Inicjalizacja..." label ────────────────────────────────────────  */
     lv_obj_t *init_lbl = mk_label(s_splash, "Inicjalizacja...", C_SUBTEXT, NULL);
-    lv_obj_align(init_lbl, LV_ALIGN_TOP_MID, 0, 250);
+    lv_obj_align(init_lbl, LV_ALIGN_TOP_MID, 0, 262);
 
     /* ── Loading bar background ─────────────────────────────────────────── */
     lv_obj_t *bar_bg = lv_obj_create(s_splash);
     lv_obj_set_size(bar_bg, 180, 4);
-    lv_obj_align(bar_bg, LV_ALIGN_TOP_MID, 0, 274);
+    lv_obj_align(bar_bg, LV_ALIGN_TOP_MID, 0, 284);
     lv_obj_set_style_bg_color(bar_bg,    lv_color_hex(C_BORDER), 0);
     lv_obj_set_style_bg_opa(bar_bg,      LV_OPA_COVER,           0);
     lv_obj_set_style_border_width(bar_bg, 0,                     0);
@@ -518,6 +456,11 @@ void app_main(void)
     lv_display_t *disp  = NULL;
     lv_indev_t   *indev = NULL;
     ESP_ERROR_CHECK(bsp_lvgl_start(&disp, &indev));
+
+    if (indev) {
+        lv_indev_set_scroll_limit(indev, 3);   /* px before scroll starts — lower=snappier */
+        lv_indev_set_scroll_throw(indev, 8);   /* % velocity lost/tick — lower=more momentum */
+    }
 
     if (bsp_lvgl_lock(1000)) {
         build_splash_screen();

@@ -48,8 +48,8 @@ esp_err_t bsp_lvgl_start(lv_display_t **disp, lv_indev_t **indev)
             .mirror_y = false,
         },
         .flags = {
-            .buff_dma = false,
-            .buff_spiram = true,   /* <- LVGL buffers in PSRAM */
+            .buff_dma = false,     /* PSRAM+DMA unreliable on ESP32-S3 */
+            .buff_spiram = true,   /* LVGL buffers in PSRAM */
             .swap_bytes = true,    /* ST7789 SPI: big-endian expected, DMA sends LE */
         },
     };
