@@ -23,7 +23,7 @@ CONFIG_FREERTOS_HZ=1000
 # USB CDC on boot (so serial works over native USB)
 CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
 
-# LVGL: color depth 16, rotation software - optional tuning later
+# LVGL: color depth 16 (byte-swap handled by esp_lvgl_port flags.swap_bytes)
 CONFIG_LV_COLOR_DEPTH_16=y
 CONFIG_LV_USE_PERF_MONITOR=y
 CONFIG_LV_FONT_MONTSERRAT_24=y

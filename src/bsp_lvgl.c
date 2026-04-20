@@ -50,6 +50,7 @@ esp_err_t bsp_lvgl_start(lv_display_t **disp, lv_indev_t **indev)
         .flags = {
             .buff_dma = false,
             .buff_spiram = true,   /* <- LVGL buffers in PSRAM */
+            .swap_bytes = true,    /* ST7789 SPI: big-endian expected, DMA sends LE */
         },
     };
     s_disp = lvgl_port_add_disp(&disp_cfg);
