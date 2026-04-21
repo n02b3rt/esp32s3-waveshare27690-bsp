@@ -3,4 +3,5 @@ idf_component_register(
     INCLUDE_DIRS "."
     REQUIRES
         esp32s3-waveshare27690-bsp
+        kni_ui
 )

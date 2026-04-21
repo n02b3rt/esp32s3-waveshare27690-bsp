@@ -1,0 +1,9 @@
+version: "0.1.0"
+description: "Dark-themed KNI UI component — splash screen, tabbed layout, scrollable panels"
+url: "https://github.com/kni-ur/esp32s3-waveshare27690-bsp"
+targets:
+  - esp32s3
+dependencies:
+  idf: ">=5.3"
+  lvgl/lvgl: "~9.2"
+  espressif/esp_lvgl_port: "^2.7"
