@@ -1,0 +1,5 @@
+## Local component references for this example.
+## kni_ui lives inside the BSP repo — reference it by relative path.
+dependencies:
+  kni_ui:
+    path: "../../../kni_ui"
