@@ -14,7 +14,7 @@ Shows how to use the `kni_ui` component — this file is your **starting templat
 
 ### Main screen
 ```
-┌─────────────────────────────────┐  ← status bar (KNI MAKERS | ESP32-S3)
+┌─────────────────────────────────┐  ← status bar (KNI | ESP32-S3)
 │                                 │
 │   [content panel — scrollable]  │  ← 234 px tall, vertical scroll
 │                                 │

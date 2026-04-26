@@ -32,7 +32,7 @@ typedef struct {
 
 /* ── Top-level config ───────────────────────────────────────────────────── */
 typedef struct {
-    const char           *title;       /* top bar left  — e.g. "KNI MAKERS" */
+    const char           *title;       /* top bar left  — e.g. "KNI" */
     const char           *subtitle;    /* top bar right — e.g. "ESP32-S3"   */
     const lv_image_dsc_t *logo;        /* splash logo image (NULL = skip)    */
     uint32_t              splash_ms;   /* animated loading bar duration (ms) */

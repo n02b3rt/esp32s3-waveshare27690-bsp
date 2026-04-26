@@ -1,5 +1,7 @@
 ## Local component references for this example.
-## kni_ui lives inside the BSP repo — reference it by relative path.
+## Both the BSP and kni_ui live inside the repo — reference by relative path.
 dependencies:
+  esp32s3-waveshare27690-bsp:
+    path: "../../.."
   kni_ui:
     path: "../../../kni_ui"

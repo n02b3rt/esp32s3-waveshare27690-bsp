@@ -15,6 +15,9 @@ sdkconfig.old
 *.swo
 .cache/
 
+# Generated previews
+*.html
+
 # Python
 __pycache__/
 *.pyc

@@ -95,7 +95,7 @@ static const kni_ui_tab_t tabs[] = {
 };
 
 static const kni_ui_cfg_t ui_cfg = {
-    .title     = "KNI MAKERS",
+    .title     = "KNI",
     .subtitle  = "ESP32-S3",
     .logo      = &kni_logo,
     .splash_ms = 2800,

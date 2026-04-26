@@ -1,13 +1,15 @@
 # ESP32-S3 Waveshare 27690 BSP
 
 > Board Support Package for the **Waveshare ESP32-S3-Touch-LCD-2.8** (SKU 27690)  
-> ESP-IDF managed component — ST7789 display + CST328 touch + LVGL integration
+> ST7789 display · CST328 capacitive touch · LVGL 9 integration
 
-[![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.3+-blue)](https://github.com/espressif/esp-idf)
-[![LVGL](https://img.shields.io/badge/LVGL-9.2-green)](https://lvgl.io)
+[![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.3+-blue?logo=espressif&logoColor=white)](https://github.com/espressif/esp-idf)
+[![LVGL](https://img.shields.io/badge/LVGL-9.2-brightgreen?logo=lvgl&logoColor=white)](https://lvgl.io)
+[![Target](https://img.shields.io/badge/target-ESP32--S3-orange?logo=espressif&logoColor=white)](https://www.espressif.com/en/products/socs/esp32-s3)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.1.0-informational)](idf_component.yml)
 
-*Koło Naukowe Informatyków — Uniwersytet Rzeszowski*
+*[KNI – Koło Naukowe Informatyków UR](https://github.com/kni-ur)*
 
 ---
 
@@ -28,35 +30,35 @@
 
 ```
 esp32s3-waveshare27690-bsp/
-├── src/                        # BSP source — hardware drivers
-│   ├── bsp.c                   # SPI bus, I²C bus, backlight GPIO
-│   ├── bsp_display.c           # ST7789 panel init via esp_lcd
-│   ├── bsp_touch.c             # CST328 touch init
-│   └── bsp_lvgl.c              # esp_lvgl_port glue (display + touch → LVGL)
-├── include/bsp/bsp.h           # Public API
-├── priv_include/bsp_private.h  # Internal API
-├── Kconfig                     # GPIO pin configuration (idf.py menuconfig)
-├── idf_component.yml           # Managed component manifest
+├── src/                    # BSP source — SPI/I²C bus, display, touch, LVGL glue
+├── include/bsp/bsp.h       # Public API
+├── Kconfig                 # GPIO pin config (idf.py menuconfig → BSP Configuration)
+├── idf_component.yml       # Managed component manifest
+├── kni_ui/                 # ← optional dark-theme UI component
 ├── examples/
-│   └── display_lvgl_demo/      # Full UI demo — dark theme, splash, tabs
-└── tools/
-    └── png2lvgl.py             # PNG → LVGL 9 C array converter
+│   └── display_lvgl_demo/  # ← full UI demo — splash, tabs, live stats
+└── tools/                  # ← PNG → LVGL converter script
 ```
+
+Each subdirectory has its own README:
+
+| Directory | Description |
+|---|---|
+| [`kni_ui/`](kni_ui/README.md) | Ready-made LVGL UI component — splash screen, tabs, card helpers |
+| [`examples/display_lvgl_demo/`](examples/display_lvgl_demo/README.md) | Full demo app — build, flash, and use as a project template |
+| [`tools/`](tools/README.md) | `png2lvgl.py` — PNG to LVGL 9 C array converter |
 
 ---
 
 ## Add to your project
 
-**1.** Add to your project's `main/idf_component.yml`:
+**1.** In your `main/idf_component.yml`:
 
 ```yaml
 dependencies:
   idf: ">=5.3"
   norek/esp32s3-waveshare27690-bsp:
-    git: https://github.com/YOUR_USERNAME/esp32s3-waveshare27690-bsp.git
-  lvgl/lvgl: "~9.2"
-  espressif/esp_lvgl_port: "^2.7"
-  waveshare/esp_lcd_touch_cst328: "^1.0"
+    git: https://github.com/n02b3rt/esp32s3-waveshare27690-bsp
 ```
 
 **2.** Minimal `app_main`:
@@ -81,38 +83,30 @@ void app_main(void)
 }
 ```
 
-**No manual pin configuration needed** — all GPIO defaults in `Kconfig` match the Waveshare 27690 board out of the box. Override via `idf.py menuconfig → BSP Configuration` if needed.
+All GPIO defaults in `Kconfig` match the Waveshare 27690 board out of the box — no manual pin config needed. Override via `idf.py menuconfig → BSP Configuration` if needed.
 
 ---
 
 ## API
 
 ```c
-/* Board init — call once before anything else */
-esp_err_t bsp_init(void);
-
-/* Start ST7789 display panel + backlight */
-esp_err_t bsp_display_start(void);
-esp_err_t bsp_display_brightness_set(uint8_t brightness_pct); /* 0–100, currently on/off */
-
-/* Start LVGL task, returns display and touch input device handles */
-esp_err_t bsp_lvgl_start(lv_display_t **disp, lv_indev_t **indev);
-
-/* Thread-safe LVGL access from application tasks */
-bool      bsp_lvgl_lock(int timeout_ms);
+esp_err_t bsp_init(void);                                        // call once, before anything else
+esp_err_t bsp_display_start(void);                               // start ST7789 + backlight
+esp_err_t bsp_display_brightness_set(uint8_t brightness_pct);    // 0–100 (currently on/off)
+esp_err_t bsp_lvgl_start(lv_display_t **disp, lv_indev_t **indev); // start LVGL task
+bool      bsp_lvgl_lock(int timeout_ms);                         // grab LVGL mutex
 void      bsp_lvgl_unlock(void);
 
-/* Display resolution */
 #define BSP_LCD_H_RES  240
 #define BSP_LCD_V_RES  320
 ```
 
 ---
 
-## Default pin mapping
+## Pin mapping
 
-| Signal | GPIO | Configurable |
-|--------|------|-------------|
+| Signal | GPIO | Kconfig symbol |
+|--------|:----:|----------------|
 | SPI MOSI | 45 | `BSP_LCD_PIN_MOSI` |
 | SPI SCLK | 40 | `BSP_LCD_PIN_SCLK` |
 | LCD CS | 42 | `BSP_LCD_PIN_CS` |
@@ -130,37 +124,45 @@ Verify against the [Waveshare schematic](https://www.waveshare.com/wiki/ESP32-S3
 
 ## Demo application
 
-[`examples/display_lvgl_demo/`](examples/display_lvgl_demo/README.md) — dark-themed UI template you can use as a starting point for new projects:
+[![Demo](https://img.shields.io/badge/example-display__lvgl__demo-blueviolet)](examples/display_lvgl_demo/README.md)
 
-- Splash screen with animated loading bar and KNI logo
-- 3-tab main screen: **HOME** (live uptime / free heap), **INFO**, **SYS** hardware table
-- Vertical scroll on all content panels
-- Live system stats refreshed every second
+[`examples/display_lvgl_demo/`](examples/display_lvgl_demo/README.md) — dark-themed UI template built on top of `kni_ui`:
 
-Use it as a copy-paste template when starting a new project on this board.
+- KNI logo splash with animated loading bar
+- 3-tab layout: **HOME** (live uptime / free heap), **INFO**, **SYS** hardware table
+- Scrollable content panels, live stats refreshed every second
+
+Use it as a copy-paste base when starting a new project on this board.  
+→ See [`examples/display_lvgl_demo/README.md`](examples/display_lvgl_demo/README.md) for build instructions and templating guide.
+
+---
+
+## kni_ui component
+
+[![kni_ui](https://img.shields.io/badge/component-kni__ui-teal)](kni_ui/README.md)
+
+[`kni_ui/`](kni_ui/README.md) — optional UI component that wraps LVGL into a ready-made shell:
+splash screen, top status bar, tabbed layout, scrollable panels, and card-based content helpers.
+
+→ See [`kni_ui/README.md`](kni_ui/README.md) for the full API and color palette reference.
 
 ---
 
 ## Tools
 
-[`tools/`](tools/README.md) — `png2lvgl.py`: converts any PNG to a LVGL 9 `lv_image_dsc_t` C array using Python + Pillow. No npm, no online tools required.
+[![Tools](https://img.shields.io/badge/tool-png2lvgl.py-yellow)](tools/README.md)
+
+[`tools/png2lvgl.py`](tools/README.md) — converts any PNG to a LVGL 9 `lv_image_dsc_t` C array (RGB565).  
+Python 3 + Pillow only. No npm, no online tools.
+
+```bash
+python3 tools/png2lvgl.py logo.png my_logo 160 160
+# → my_logo.c  my_logo.h
+```
+
+→ See [`tools/README.md`](tools/README.md) for full usage.
 
 ---
-
-## Dependencies
-
-| Component | Version | Role |
-|-----------|---------|------|
-| `espressif/esp_lvgl_port` | ^2.7 | LVGL ↔ esp_lcd bridge |
-| `lvgl/lvgl` | ~9.2 | Graphics library |
-| `waveshare/esp_lcd_touch_cst328` | ^1.0 | CST328 touch driver |
-| ESP-IDF `esp_lcd_st7789` | built-in | ST7789 display driver |
-
----
-
-## Versioning
-
-SemVer. `0.x.y` = pre-1.0, minor API changes possible. Breaking changes bump minor.
 
 ## License
 
