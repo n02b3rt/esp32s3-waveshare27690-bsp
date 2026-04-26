@@ -9,8 +9,6 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0-informational)](idf_component.yml)
 
-*[KNI – Koło Naukowe Informatyków UR](https://github.com/kni-ur)*
-
 ---
 
 ## Hardware
