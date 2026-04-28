@@ -6,17 +6,41 @@
 extern "C" {
 #endif
 
-/* ── Color palette — redefine before #include to override ─────────────── */
+/* ── Color palette ─────────────────────────────────────────────────────────
+ * Each token has its own #ifndef so you can override any single color
+ * without redefining the whole palette:
+ *
+ *   #define KNI_UI_C_TEAL  0xFF6600   // swap accent to orange
+ *   #include "kni_ui/kni_ui.h"
+ *
+ * Or pass via compiler flag: -DKNI_UI_C_TEAL=0xFF6600
+ * ─────────────────────────────────────────────────────────────────────────── */
 #ifndef KNI_UI_C_BG
-#define KNI_UI_C_BG       0x07111A   /* screen background    */
-#define KNI_UI_C_CARD     0x16263A   /* card surface         */
-#define KNI_UI_C_TEAL     0x00CCA3   /* accent / active      */
-#define KNI_UI_C_TEAL_DIM 0x00856B   /* dimmed accent        */
-#define KNI_UI_C_TEXT     0xDDECF8   /* primary text         */
-#define KNI_UI_C_SUBTEXT  0x6888A8   /* secondary text       */
-#define KNI_UI_C_BORDER   0x1D3148   /* card border          */
-#define KNI_UI_C_BAR      0x0B1825   /* top / bottom bars    */
-#define KNI_UI_C_INACTIVE 0x3D5A78   /* inactive tab label   */
+#define KNI_UI_C_BG       0x07111A   /* screen background  */
+#endif
+#ifndef KNI_UI_C_CARD
+#define KNI_UI_C_CARD     0x16263A   /* card surface       */
+#endif
+#ifndef KNI_UI_C_TEAL
+#define KNI_UI_C_TEAL     0x00CCA3   /* accent / active    */
+#endif
+#ifndef KNI_UI_C_TEAL_DIM
+#define KNI_UI_C_TEAL_DIM 0x00856B   /* dimmed accent      */
+#endif
+#ifndef KNI_UI_C_TEXT
+#define KNI_UI_C_TEXT     0xDDECF8   /* primary text       */
+#endif
+#ifndef KNI_UI_C_SUBTEXT
+#define KNI_UI_C_SUBTEXT  0x6888A8   /* secondary text     */
+#endif
+#ifndef KNI_UI_C_BORDER
+#define KNI_UI_C_BORDER   0x1D3148   /* card border        */
+#endif
+#ifndef KNI_UI_C_BAR
+#define KNI_UI_C_BAR      0x0B1825   /* top / bottom bars  */
+#endif
+#ifndef KNI_UI_C_INACTIVE
+#define KNI_UI_C_INACTIVE 0x3D5A78   /* inactive tab label */
 #endif
 
 #define KNI_UI_MAX_TABS   5
